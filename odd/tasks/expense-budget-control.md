@@ -138,3 +138,4 @@ Each claim was verified in code before fixing. RED was observed before every fix
 - E2E: `/clinica` added to the no-horizontal-overflow routes (also the 360px test), the fixed-controls-cover test and the 44px tap-target list in `e2e/layout.spec.ts`. README updated (features, project tree, lazy routes).
 - Checks: typecheck, lint clean; `npx vitest run` 24 files / 214 tests pass; build OK; `check:bundle` 67.5 KB gzip (ClinicInfoPage chunk 0.8 KB); `npx playwright test` 66 passed, 27 skipped (remote-only deployment spec).
 - Review assessment (commit 0c60753, base main, committed-only): risk medium (executable_change e2e/layout.spec.ts), 171 lines, review_due=false (under_budget) — stays pending in slice.
+- Follow-up (review suggestions R3-001, R3-002 + deep link): nav item aria-current asserted, Facebook regex anchored, /clinica added to remote deep-link checks. Vitest 214 passed; Playwright local 66 passed; remote 96 passed.

@@ -5,8 +5,11 @@ import { renderApp } from '../test-utils/renderApp'
 describe('Clinic info page', () => {
   it('is reachable from the main navigation', async () => {
     const { user } = renderApp()
-    await user.click(screen.getByRole('link', { name: /^Clínica$/ }))
+    const navLink = screen.getByRole('link', { name: /^Clínica$/ })
+    expect(navLink).not.toHaveAttribute('aria-current')
+    await user.click(navLink)
     expect(await screen.findByRole('heading', { level: 1, name: 'Clínica Veterinaria Sienra' })).toBeInTheDocument()
+    expect(navLink).toHaveAttribute('aria-current', 'page')
   })
 
   it('shows the clinic name, description and address', async () => {
@@ -36,7 +39,7 @@ describe('Clinic info page', () => {
 
   it('links to the Facebook page in a new tab', async () => {
     renderApp({ route: '/clinica' })
-    const facebook = await screen.findByRole('link', { name: /Facebook/ })
+    const facebook = await screen.findByRole('link', { name: /^Facebook/ })
     expect(facebook).toHaveAttribute('href', 'https://www.facebook.com/clinicaveterinaria.sienra/')
     expect(facebook).toHaveAttribute('target', '_blank')
     expect(facebook).toHaveAttribute('rel', 'noopener noreferrer')

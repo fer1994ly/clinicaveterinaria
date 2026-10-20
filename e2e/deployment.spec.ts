@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test'
 // They use a plain context on purpose: no faked clock, so timings and fonts are the real ones.
 test.skip(!process.env.E2E_BASE_URL, 'Remote only: set E2E_BASE_URL (npm run test:e2e:remote)')
 
-const DEEP_LINKS = ['/gastos', '/gastos/nuevo', '/mes-anterior', '/admin']
+const DEEP_LINKS = ['/gastos', '/gastos/nuevo', '/mes-anterior', '/clinica', '/admin']
 
 test.describe('deployment', () => {
   test('serves the security headers on the home page', async ({ request }) => {
