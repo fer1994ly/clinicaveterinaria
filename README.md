@@ -76,6 +76,7 @@ npm run preview    # sirve el build en http://localhost:4173
 | `npm run lint` | Ejecuta ESLint sobre todo el proyecto (incluye la regla `no-console`). |
 | `npm test` | Vitest en modo watch. Usar `npm test -- --run` para una sola ejecución. |
 | `npm run test:e2e` | Pruebas E2E con Playwright (construye y levanta `preview` automáticamente). |
+| `npm run test:e2e:remote` | Las mismas pruebas E2E contra el sitio desplegado (`https://clinicaveterinariagastos.netlify.app`), sin levantar servidor local, más `e2e/deployment.spec.ts`. |
 | `npm run check:bundle` | Falla si el JavaScript de producción supera 150 KB gzip. Requiere `npm run build` previo. |
 
 ## Testing
@@ -86,9 +87,9 @@ El proyecto se desarrolló con **TDD estricto** (RED → GREEN → REFACTOR), co
 | --- | --- | --- | --- |
 | Unitarias | Vitest | `src/**/*.test.ts` junto al código | Reglas de dominio (estado de presupuesto, validación, dinero, meses), casos de uso, repositorios y semilla. |
 | Integración | Vitest + Testing Library (jsdom) | `src/app/*.integration.test.tsx` | Pantallas completas con almacenamiento en memoria y reloj fijo: resumen, gastos, mes anterior, administración. |
-| E2E | Playwright | `e2e/` (`acceptance.spec.ts`, `layout.spec.ts`) | Criterios de aceptación, persistencia tras recargar y ausencia de desbordamiento horizontal en móvil. |
+| E2E | Playwright | `e2e/` (`acceptance.spec.ts`, `layout.spec.ts`, `deployment.spec.ts`) | Criterios de aceptación, persistencia tras recargar y ausencia de desbordamiento horizontal en móvil; `deployment.spec.ts` solo corre contra el sitio desplegado. |
 
-**Cantidades actuales:** Vitest, 21 archivos de prueba con 168 pruebas; Playwright, 20 escenarios ejecutados en 3 proyectos (60 pruebas).
+**Cantidades actuales:** Vitest, 23 archivos de prueba con 209 pruebas; Playwright, 20 escenarios locales en 3 proyectos (60 pruebas) y 9 verificaciones adicionales de despliegue (27 pruebas, solo en modo remoto).
 
 ```bash
 npm test -- --run                          # unitarias + integración
@@ -102,7 +103,20 @@ Proyectos de Playwright (`playwright.config.ts`):
 - `mobile-android`: emulación de Pixel 7 (Chromium).
 - `mobile-ios`: emulación de iPhone 14 sobre WebKit real.
 
-Las pruebas E2E congelan el reloj en **martes 20 de octubre de 2026** (`NOW` en `e2e/fixtures.ts`), por lo que los datos de ejemplo y los totales son deterministas.
+Las pruebas E2E congelan el reloj en **martes 20 de octubre de 2026** (`NOW` en `e2e/fixtures.ts`), por lo que los datos de ejemplo y los totales son deterministas. La prueba de rendimiento y `deployment.spec.ts` no usan reloj congelado: miden con el propio navegador (`performance.now()` y *navigation timing*).
+
+### E2E contra el sitio desplegado
+
+```bash
+npm run test:e2e:remote                     # usa https://clinicaveterinariagastos.netlify.app
+E2E_BASE_URL=https://otro-sitio npm run test:e2e:remote   # otro destino
+```
+
+- Si `E2E_BASE_URL` está definida, `playwright.config.ts` la usa como `baseURL` y **no levanta** el servidor local. El script `scripts/e2e-remote.mjs` la define de forma multiplataforma (sin `cross-env`) y reenvía el código de salida; se pueden pasar argumentos de Playwright (`npm run test:e2e:remote -- --project=desktop-chromium`).
+- En modo remoto las tipografías de Google Fonts **no se bloquean** (forman parte de producción) y cada prueba usa un contexto limpio, por lo que `localStorage` arranca vacío y se generan los datos de ejemplo.
+- `e2e/deployment.spec.ts` verifica en el despliegue real: cabeceras (CSP, `X-Frame-Options: DENY`, `nosniff`), caché `immutable` de `/assets/*`, enlaces directos y recarga de `/gastos`, `/gastos/nuevo`, `/mes-anterior` y `/admin`, ausencia de errores de consola y de violaciones de CSP, carga real de Nunito e Inter y carga completa en menos de 3 s.
+- Netlify inyecta en los sitios publicados una insignia propia (`/.netlify/scripts/hud`) que construye un iframe con script en línea y la CSP del sitio la bloquea (correctamente). Esa prueba la reemplaza por un script vacío para medir solo el código propio.
+- Tras publicar cambios, esperar a que Netlify termine el despliegue antes de correr la suite remota; si no, se prueba la versión anterior.
 
 ## Arquitectura
 
@@ -204,7 +218,9 @@ Todo se guarda en el navegador, con claves versionadas (`v1`):
 | `sessionStorage` | `sienra.v1.admin-unlocked` | Marca de administración desbloqueada (dura mientras la pestaña esté abierta). |
 
 - **Versionado:** el sufijo `v1` en la clave permite introducir un formato nuevo (`v2`) sin pisar datos existentes.
-- **Datos corruptos:** si el JSON es inválido o no cumple el formato, los presupuestos vuelven a los valores por defecto y los gastos se tratan como inexistentes (se vuelve a sembrar). En listas parcialmente válidas se descartan solo los registros mal formados.
+- **Datos corruptos (presupuestos):** cada categoría se valida por separado; un valor inválido vuelve al presupuesto por defecto de esa categoría y los valores válidos se conservan.
+- **Datos corruptos (gastos) y cuarentena:** los registros mal formados no se muestran, pero **nunca se destruyen**: antes de la siguiente escritura se copian a la clave `sienra.v1.expenses.quarantine` (si todo el JSON es ilegible, se guarda el texto original). Se pueden inspeccionar o recuperar a mano desde las herramientas del navegador.
+- **Errores al guardar:** si el navegador rechaza una escritura (cuota llena, modo privado o almacenamiento bloqueado), el adaptador lanza `StorageWriteError`; los repositorios la capturan, conservan los datos en memoria (se guardan con la siguiente escritura exitosa) y la interfaz muestra un aviso no bloqueante: «No se pudo guardar. Verifique el espacio disponible del navegador.»
 
 ## Integración con backend (para Kodarvia)
 
@@ -250,6 +266,8 @@ Qué configura `netlify.toml`:
 - **Caché:** `/assets/*` (archivos con hash) con `public, max-age=31536000, immutable`; `/index.html` con `no-cache` para que cada despliegue nuevo se recoja de inmediato.
 - **Cabeceras de seguridad** en `/*`: `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: DENY`, `Permissions-Policy` (cámara, micrófono y geolocalización deshabilitados) y una `Content-Security-Policy` que permite solo recursos propios, más estilos de `fonts.googleapis.com` y tipografías de `fonts.gstatic.com`. Si se agrega otro recurso externo, hay que ampliar la política.
 
+**Verificación del despliegue:** `npm run test:e2e:remote` ejecuta la suite E2E y `e2e/deployment.spec.ts` contra `https://clinicaveterinariagastos.netlify.app` (cabeceras, caché, enlaces directos, CSP, tipografías y tiempo de carga). Ver [E2E contra el sitio desplegado](#e2e-contra-el-sitio-desplegado).
+
 **Alternativa manual:** ejecutar `npm run build` y arrastrar la carpeta `dist/` a la sección *Deploys* del sitio en Netlify. Un despliegue manual de `dist/` no incluye `netlify.toml`, por lo que la redirección SPA y las cabeceras no se aplicarían; para mantenerlas, el sitio debe estar conectado al repositorio.
 
 ## Calidad de código
@@ -264,8 +282,11 @@ Qué configura `netlify.toml`:
 - La clave de administración es una constante en el código del cliente: sirve para la demostración, no ofrece seguridad real.
 - Una sola moneda (UYU) y cuatro categorías fijas; solo los presupuestos son editables.
 - Los presupuestos son únicos y no varían por mes.
+- Si la fecha del sistema cambia con la pestaña abierta, el resumen pasa al nuevo mes a medianoche o al volver a la pestaña; no hay sincronización entre pestañas distintas.
 - Los repositorios son síncronos (ver la sección de integración con backend).
 - Las tipografías se cargan desde Google Fonts, por lo que requieren conexión en la primera visita.
+- Los montos son pesos enteros: se aceptan `1500`, `1.500` y `$ 1.500` (el punto solo como separador de miles en grupos de tres cifras); los montos con decimales (`1500,50`, `1.5`) se rechazan con un mensaje claro.
+- Si el almacenamiento del navegador está lleno o bloqueado, los cambios viven solo en memoria hasta que se pueda volver a guardar (la interfaz lo avisa); cerrar la pestaña antes de eso los pierde.
 
 ## Licencia y créditos
 
