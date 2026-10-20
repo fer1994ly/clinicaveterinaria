@@ -17,6 +17,10 @@ export default tseslint.config(
     },
   },
   {
+    files: ['e2e/**'],
+    rules: { 'react-hooks/rules-of-hooks': 'off' },
+  },
+  {
     files: ['**/*.mjs', '**/*.js'],
     languageOptions: { globals: { ...globals.node } },
   },

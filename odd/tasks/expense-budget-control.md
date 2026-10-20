@@ -39,7 +39,7 @@ The clinic tracks expenses from memory and finds out about overspending (e.g. a 
 - [x] T3 Expenses slice domain/application/infrastructure: Expense validation, add/edit/delete, history query (category + date range + search), localStorage repository, seed data. Unit + integration tests. Route: delegated.
 - [x] T4 UI: dashboard (total + category cards + progress bars + alerts), expense form (create/edit), history with filters/search, delete confirmation, previous-month read-only view, mobile navigation. Integration tests (RTL). Route: delegated.
 - [x] T5 Admin slice: password gate (session-scoped), budget editing. Unit + integration tests. Route: delegated.
-- [ ] T6 E2E (web + mobile): acceptance criteria scenarios, persistence after reload, no horizontal overflow on mobile. README with run instructions. Route: delegated.
+- [x] T6 E2E (web + mobile): acceptance criteria scenarios, persistence after reload, no horizontal overflow on mobile. README with run instructions. Route: delegated.
 
 ## Acceptance criteria
 - Adding an expense updates its category total without reload.
@@ -58,7 +58,7 @@ The clinic tracks expenses from memory and finds out about overspending (e.g. a 
 - (commits and check results recorded per task below)
 
 ## Next step
-T6.
+Hand over: user decides push / PR (forecast > 400 lines: chain strategy to be asked).
 
 ### T1 (commit 918958e)
 - RED: 5 test files failed with `Failed to resolve import "./money" / "./yearMonth" / "./clock" / "./formatters" / storage adapters` (modules did not exist yet).
@@ -80,3 +80,7 @@ T6.
 ### T5
 - RED: `auth.test.ts` and `adminAccess.test.ts` failed to import (modules missing); 15 tests in `admin.integration.test.tsx` failed (no Admin link/route, no password screen).
 - GREEN: 168 tests pass (21 files); typecheck, lint, build clean.
+
+### T6
+- E2E written after the implementation (characterization of acceptance criteria). First run observed 9 failures (3 specs x 3 projects): strict-mode heading locator, `getByLabel` also matching a button aria-label, and `performance.getEntriesByType('navigation')` empty under the faked clock; specs corrected, then 60/60 pass (desktop-chromium, mobile-android, mobile-ios on real WebKit).
+- Final checks: typecheck, lint, 168 Vitest tests, build, `check:bundle` 65.7 KB gzip, `test:e2e` 60 passed.
