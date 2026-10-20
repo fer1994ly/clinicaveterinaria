@@ -40,6 +40,9 @@ The clinic tracks expenses from memory and finds out about overspending (e.g. a 
 - [x] T4 UI: dashboard (total + category cards + progress bars + alerts), expense form (create/edit), history with filters/search, delete confirmation, previous-month read-only view, mobile navigation. Integration tests (RTL). Route: delegated.
 - [x] T5 Admin slice: password gate (session-scoped), budget editing. Unit + integration tests. Route: delegated.
 - [x] T6 E2E (web + mobile): acceptance criteria scenarios, persistence after reload, no horizontal overflow on mobile. README with run instructions. Route: delegated.
+- [x] T7 Delivery prep: no console.* anywhere in source/scripts (ESLint no-console enforced), comprehensive README, Netlify deployment config (netlify.toml, SPA fallback, cache headers, Node version). Route: delegated (README + config + script = 2+ files).
+- [ ] T8 Native review per work-unit commit (T1..T7), each in its own worktree; user chose option A on 2026-10-20. Route: native review.
+- [ ] T9 Rename branch to main, add remote origin https://github.com/fer1994ly/clinicaveterinaria.git, push (user-authorized 2026-10-20).
 
 ## Acceptance criteria
 - Adding an expense updates its category total without reload.
@@ -58,7 +61,7 @@ The clinic tracks expenses from memory and finds out about overspending (e.g. a 
 - (commits and check results recorded per task below)
 
 ## Next step
-Hand over: user decides push / PR (forecast > 400 lines: chain strategy to be asked).
+T8 reviews, then T9 push.
 
 ### T1 (commit 918958e)
 - RED: 5 test files failed with `Failed to resolve import "./money" / "./yearMonth" / "./clock" / "./formatters" / storage adapters` (modules did not exist yet).
@@ -84,3 +87,8 @@ Hand over: user decides push / PR (forecast > 400 lines: chain strategy to be as
 ### T6
 - E2E written after the implementation (characterization of acceptance criteria). First run observed 9 failures (3 specs x 3 projects): strict-mode heading locator, `getByLabel` also matching a button aria-label, and `performance.getEntriesByType('navigation')` empty under the faked clock; specs corrected, then 60/60 pass (desktop-chromium, mobile-android, mobile-ios on real WebKit).
 - Final checks: typecheck, lint, 168 Vitest tests, build, `check:bundle` 65.7 KB gzip, `test:e2e` 60 passed.
+
+### T7
+- RED: added `no-console: error` to `eslint.config.js`; `npm run lint` failed with 4 errors (`Unexpected console statement`) in `scripts/check-bundle.mjs` lines 13, 21, 24, 26. GREEN: replaced with `process.stdout.write` / `process.stderr.write` (exit codes unchanged); lint clean.
+- Added `netlify.toml` (build, Node 22, SPA redirect, cache and security headers incl. CSP checked against index.html: one module script, Google Fonts only), `.nvmrc` (22), `engines.node >=20`, full Spanish README.
+- Checks: lint, typecheck, 168 Vitest tests (21 files), build, `check:bundle` 65.7 KB gzip, `test:e2e` 60 passed; `git grep "console\."` empty. Commit hash is reported by the delivery log (`git log --grep "Netlify"`).

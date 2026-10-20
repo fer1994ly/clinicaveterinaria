@@ -10,7 +10,7 @@ let files
 try {
   files = readdirSync(dir).filter((f) => f.endsWith('.js'))
 } catch {
-  console.error('dist/assets not found. Run "npm run build" first.')
+  process.stderr.write('dist/assets not found. Run "npm run build" first.\n')
   process.exit(1)
 }
 
@@ -18,11 +18,11 @@ let total = 0
 for (const file of files) {
   const size = gzipSync(readFileSync(join(dir, file))).length
   total += size
-  console.log(`${file}: ${(size / 1024).toFixed(1)} KB gzip`)
+  process.stdout.write(`${file}: ${(size / 1024).toFixed(1)} KB gzip\n`)
 }
 const totalKb = total / 1024
-console.log(`Total JS: ${totalKb.toFixed(1)} KB gzip (limit ${LIMIT_KB} KB)`)
+process.stdout.write(`Total JS: ${totalKb.toFixed(1)} KB gzip (limit ${LIMIT_KB} KB)\n`)
 if (totalKb > LIMIT_KB) {
-  console.error('Bundle budget exceeded.')
+  process.stderr.write('Bundle budget exceeded.\n')
   process.exit(1)
 }

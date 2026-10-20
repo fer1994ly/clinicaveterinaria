@@ -3,6 +3,9 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "description": "Expense and budget control for Clinica Veterinaria Sienra",
   "scripts": {
     "dev": "vite",

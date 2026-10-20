@@ -17,6 +17,10 @@ export default tseslint.config(
     },
   },
   {
+    files: ['**/*.{ts,tsx,js,mjs,cjs}'],
+    rules: { 'no-console': 'error' },
+  },
+  {
     files: ['e2e/**'],
     rules: { 'react-hooks/rules-of-hooks': 'off' },
   },
