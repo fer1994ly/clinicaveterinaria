@@ -38,7 +38,7 @@ The clinic tracks expenses from memory and finds out about overspending (e.g. a 
 - [x] T2 Budgets slice domain/application: Category, budget status (ok/warning/exceeded), category summaries per month, monthly total. Unit tests. Route: delegated.
 - [x] T3 Expenses slice domain/application/infrastructure: Expense validation, add/edit/delete, history query (category + date range + search), localStorage repository, seed data. Unit + integration tests. Route: delegated.
 - [x] T4 UI: dashboard (total + category cards + progress bars + alerts), expense form (create/edit), history with filters/search, delete confirmation, previous-month read-only view, mobile navigation. Integration tests (RTL). Route: delegated.
-- [ ] T5 Admin slice: password gate (session-scoped), budget editing. Unit + integration tests. Route: delegated.
+- [x] T5 Admin slice: password gate (session-scoped), budget editing. Unit + integration tests. Route: delegated.
 - [ ] T6 E2E (web + mobile): acceptance criteria scenarios, persistence after reload, no horizontal overflow on mobile. README with run instructions. Route: delegated.
 
 ## Acceptance criteria
@@ -58,7 +58,7 @@ The clinic tracks expenses from memory and finds out about overspending (e.g. a 
 - (commits and check results recorded per task below)
 
 ## Next step
-T5.
+T6.
 
 ### T1 (commit 918958e)
 - RED: 5 test files failed with `Failed to resolve import "./money" / "./yearMonth" / "./clock" / "./formatters" / storage adapters` (modules did not exist yet).
@@ -76,3 +76,7 @@ T5.
 - RED: 4 new files failed to import (`app/AppProviders`, `compareMonths`, ...) and `LocalBudgetRepository > returns a stable snapshot until the budgets change` failed on the assertion (getAll returned a new object each call).
 - GREEN: 140 tests pass (18 files); typecheck, lint, build clean; `check:bundle` 64.0 KB gzip.
 - Note: nav has Inicio / Gastos / Mes anterior; the Admin tab is added in T5.
+
+### T5
+- RED: `auth.test.ts` and `adminAccess.test.ts` failed to import (modules missing); 15 tests in `admin.integration.test.tsx` failed (no Admin link/route, no password screen).
+- GREEN: 168 tests pass (21 files); typecheck, lint, build clean.

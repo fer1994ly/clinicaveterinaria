@@ -11,6 +11,8 @@ const PreviousMonthPage = lazy(() =>
   import('../features/monthly-comparison/ui/PreviousMonthPage').then((m) => ({ default: m.PreviousMonthPage })),
 )
 
+const AdminPage = lazy(() => import('../features/admin/ui/AdminPage').then((m) => ({ default: m.AdminPage })))
+
 function Loading() {
   return <p className="p-4 text-ink-soft">Cargando…</p>
 }
@@ -40,6 +42,14 @@ export function AppRoutes() {
           element={
             <Suspense fallback={<Loading />}>
               <PreviousMonthPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="admin"
+          element={
+            <Suspense fallback={<Loading />}>
+              <AdminPage />
             </Suspense>
           }
         />

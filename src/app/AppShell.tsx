@@ -1,11 +1,12 @@
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { buttonClasses } from '../shared/ui/Button'
-import { CalendarIcon, HomeIcon, ListIcon, PawIcon, PlusIcon } from '../shared/ui/icons'
+import { CalendarIcon, HomeIcon, ListIcon, LockIcon, PawIcon, PlusIcon } from '../shared/ui/icons'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Inicio', icon: HomeIcon, end: true },
   { to: '/gastos', label: 'Gastos', icon: ListIcon, end: true },
   { to: '/mes-anterior', label: 'Mes anterior', icon: CalendarIcon, end: true },
+  { to: '/admin', label: 'Admin', icon: LockIcon, end: true },
 ]
 
 /**
@@ -13,10 +14,9 @@ const NAV_ITEMS = [
  * The bottom bar and the action are fixed, so <main> reserves enough room below
  * its content (plus the iOS safe area) to never cover the last card.
  */
-export function AppShell({ extraNav = [] }: { extraNav?: typeof NAV_ITEMS }) {
+export function AppShell() {
   const { pathname } = useLocation()
   const onFormPage = pathname.startsWith('/gastos/')
-  const items = [...NAV_ITEMS, ...extraNav]
 
   return (
     <div className="mx-auto min-h-screen max-w-3xl">
@@ -52,7 +52,7 @@ export function AppShell({ extraNav = [] }: { extraNav?: typeof NAV_ITEMS }) {
         className="fixed inset-x-0 bottom-0 z-40 border-t border-ink/10 bg-white pb-[env(safe-area-inset-bottom)] md:bottom-4 md:left-1/2 md:right-auto md:w-[32rem] md:-translate-x-1/2 md:rounded-2xl md:border md:pb-0 md:shadow-card"
       >
         <ul className="flex">
-          {items.map(({ to, label, icon: Icon, end }) => (
+          {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
             <li key={to} className="min-w-0 flex-1">
               <NavLink
                 to={to}

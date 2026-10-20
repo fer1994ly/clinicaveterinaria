@@ -7,6 +7,8 @@ import { LocalBudgetRepository } from '../features/budgets/infrastructure/localB
 import type { ExpenseRepository } from '../features/expenses/domain/ports'
 import { LocalExpenseRepository } from '../features/expenses/infrastructure/localExpenseRepository'
 import { seedIfEmpty } from '../features/expenses/infrastructure/seed'
+import type { AdminSession } from '../features/admin/domain/ports'
+import { StorageAdminSession } from '../features/admin/infrastructure/storageAdminSession'
 
 /** Everything the UI needs, wired once at the composition root. */
 export interface Container {
@@ -14,13 +16,13 @@ export interface Container {
   newId: IdGenerator
   expenses: ExpenseRepository
   budgets: BudgetRepository
-  /** storage for the admin session (sessionStorage in the browser) */
-  sessionStorage: KeyValueStorage
+  adminSession: AdminSession
 }
 
 export interface ContainerOptions {
   /** persistent storage (localStorage in the browser). Swap here to use a backend-backed adapter. */
   storage: KeyValueStorage
+  /** per-tab storage for the admin unlocked flag (sessionStorage in the browser) */
   sessionStorage: KeyValueStorage
   clock: Clock
   newId?: IdGenerator
@@ -31,5 +33,5 @@ export function createContainer(options: ContainerOptions): Container {
   const expenses = new LocalExpenseRepository(options.storage)
   const budgets = new LocalBudgetRepository(options.storage)
   seedIfEmpty(expenses, options.clock, newId)
-  return { clock: options.clock, newId, expenses, budgets, sessionStorage: options.sessionStorage }
+  return { clock: options.clock, newId, expenses, budgets, adminSession: new StorageAdminSession(options.sessionStorage) }
 }
