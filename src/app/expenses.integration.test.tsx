@@ -1,9 +1,38 @@
 import { fireEvent, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
+import { MemoryStorage } from '../shared/infrastructure/memoryStorage'
 import { renderApp } from '../test-utils/renderApp'
 
 const listItems = () => within(screen.getByRole('list', { name: 'Lista de gastos' })).getAllByRole('listitem')
 const summary = () => screen.getByTestId('history-summary')
+
+describe('Expense form cancel', () => {
+  it('goes back to the previous screen when there is in-app history', async () => {
+    const { user } = renderApp({ route: '/gastos' })
+    await screen.findByRole('list', { name: 'Lista de gastos' })
+    await user.click(screen.getAllByRole('button', { name: /^Editar gasto:/ })[0]!)
+    expect(await screen.findByRole('heading', { name: 'Editar gasto' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }))
+    expect(await screen.findByRole('list', { name: 'Lista de gastos' })).toBeInTheDocument()
+  })
+
+  it('goes back to the dashboard from a directly opened new-expense form', async () => {
+    const { user } = renderApp({ route: '/gastos/nuevo' })
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }))
+    expect(await screen.findByTestId('month-total')).toBeInTheDocument()
+  })
+
+  it('goes back to the history from a directly opened edit form', async () => {
+    const storage = new MemoryStorage()
+    const first = renderApp({ route: '/', storage })
+    const id = first.container.expenses.all()[0]!.id
+    first.unmount()
+    const { user } = renderApp({ route: `/gastos/${id}/editar`, storage })
+    expect(await screen.findByRole('heading', { name: 'Editar gasto' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }))
+    expect(await screen.findByRole('list', { name: 'Lista de gastos' })).toBeInTheDocument()
+  })
+})
 
 describe('Expense form', () => {
   it('blocks submit and shows Spanish inline errors when required fields are missing', async () => {

@@ -1,4 +1,4 @@
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useContainer, useExpenses, useToday } from '../../../app/AppProviders'
 import { ArrowLeftIcon } from '../../../shared/ui/icons'
 import { buttonClasses } from '../../../shared/ui/Button'
@@ -11,6 +11,7 @@ import { ExpenseForm, type FormErrors } from './ExpenseForm'
 export function ExpenseFormPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const { expenses: repo, newId } = useContainer()
   const expenses = useExpenses()
   const today = useToday()
@@ -37,6 +38,10 @@ export function ExpenseFormPage() {
       }
     : { categoryId: '', amount: '', date: today, description: '' }
 
+  const fallbackRoute = editing ? '/gastos' : '/'
+  // 'default' is the key of the first entry: the form was opened directly, so there is nothing to go back to.
+  const cancel = () => (location.key === 'default' ? navigate(fallbackRoute, { replace: true }) : navigate(-1))
+
   const submit = (input: ExpenseFormInput): FormErrors | null => {
     const result = editing ? editExpense(repo, editing.id, input) : addExpense({ repo, newId }, input)
     if (!result.ok) return result.errors
@@ -56,7 +61,7 @@ export function ExpenseFormPage() {
         initial={initial}
         submitLabel={editing ? 'Guardar cambios' : 'Guardar gasto'}
         onSubmit={submit}
-        onCancel={() => navigate(-1)}
+        onCancel={cancel}
       />
     </div>
   )
