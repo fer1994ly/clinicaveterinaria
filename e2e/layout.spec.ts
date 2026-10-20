@@ -1,7 +1,7 @@
 import { expect, test } from './fixtures'
 
-const ROUTES = ['/', '/gastos', '/gastos/nuevo', '/mes-anterior', '/admin']
-const SCROLLING_ROUTES = ['/', '/gastos', '/mes-anterior']
+const ROUTES = ['/', '/gastos', '/gastos/nuevo', '/mes-anterior', '/clinica', '/admin']
+const SCROLLING_ROUTES = ['/', '/gastos', '/mes-anterior', '/clinica']
 
 test.describe('layout', () => {
   for (const route of ROUTES) {
@@ -63,6 +63,7 @@ test.describe('layout', () => {
       page.getByRole('link', { name: 'Inicio' }),
       page.getByRole('link', { name: 'Gastos', exact: true }),
       page.getByRole('link', { name: 'Mes anterior' }),
+      page.getByRole('link', { name: 'Clínica', exact: true }),
       page.getByRole('link', { name: 'Admin' }),
     ]
     for (const target of targets) {

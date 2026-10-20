@@ -45,6 +45,7 @@ The clinic tracks expenses from memory and finds out about overspending (e.g. a 
 - [x] T9 Rename branch to main, add remote origin https://github.com/fer1994ly/clinicaveterinaria.git, push (user-authorized 2026-10-20).
 - [x] T10 Fix review warnings: parseAmount decimals, BudgetEditor stale after reset, storage write failure handling, no silent record drop, per-category budget corruption fallback, Cancel fallback on direct entry, month rollover re-render, E2E count race + perf flakiness. Route: delegated (multi-file).
 - [x] T11 Remote E2E against https://clinicaveterinariagastos.netlify.app (desktop + mobile): Playwright base URL override, CSP/headers/fonts check, load-time check; push to origin main (user-requested 2026-10-20) so Netlify redeploys. Route: delegated config + parent run.
+- [x] T12 Clinic info page (scope addition requested by user 2026-10-20): route `/clinica` linked from main navigation, showing what the clinic does, address (Román Guerra 721 esq. Arturo Santana, Maldonado), phone 4223 1258, Google Maps link and Facebook link (https://www.facebook.com/clinicaveterinaria.sienra/). External links only (no iframe, CSP unchanged). Opening hours omitted: directory sources disagree. Branch `feat/clinic-info-page`. Route: delegated (writer trigger: page + route + nav + tests = 2+ non-trivial files).
 
 ## Acceptance criteria
 - Adding an expense updates its category total without reload.
@@ -63,7 +64,10 @@ The clinic tracks expenses from memory and finds out about overspending (e.g. a 
 - (commits and check results recorded per task below)
 
 ## Next step
-T11: parent pushes `main` to origin so Netlify redeploys, waits for the deploy, then re-runs `npm run test:e2e:remote` (config and `e2e/deployment.spec.ts` are ready).
+
+T12 is committed on `feat/clinic-info-page`; the branch is ready for the user to decide push / PR (nothing pushed).
+
+Previous: T11: parent pushes `main` to origin so Netlify redeploys, waits for the deploy, then re-runs `npm run test:e2e:remote` (config and `e2e/deployment.spec.ts` are ready).
 
 ### T1 (commit 918958e)
 - RED: 5 test files failed with `Failed to resolve import "./money" / "./yearMonth" / "./clock" / "./formatters" / storage adapters` (modules did not exist yet).
@@ -126,3 +130,10 @@ Each claim was verified in code before fixing. RED was observed before every fix
 - T10/T11 commits ebb0fcd, f4d2ad3, 534e980, 406e51e, 04367a9, 224e3cb reviewed one by one in detached worktrees (user granted all 6): all approved and acknowledged.
 - Pushed to origin/main; Netlify served the new bundle (index-DEbjM4qN.js) ~20 s later.
 - `npm run test:e2e:remote` against https://clinicaveterinariagastos.netlify.app: 87 passed, 2 consecutive runs (desktop-chromium, mobile-android Pixel 7, mobile-ios iPhone 14 WebKit; acceptance + layout + deployment specs).
+
+### T12 (branch `feat/clinic-info-page`)
+- Route: delegated writer (page + route + nav + tests = 2+ non-trivial files).
+- RED: `src/app/clinicInfo.integration.test.tsx` (5 tests) failed 5/5 before implementation: no "Clínica" nav link and no `/clinica` route (`Unable to find an accessible element with the role "link"`).
+- GREEN: new slice `src/features/clinic-info/{domain/clinicInfo.ts,ui/ClinicInfoPage.tsx}`, lazy route `clinica`, nav item "Clínica" (new `MapPinIcon`) between "Mes anterior" and "Admin". Maps and Facebook links use `target="_blank" rel="noopener noreferrer"`; phone is `tel:+59842231258`; no iframe, CSP unchanged. Opening hours intentionally omitted.
+- E2E: `/clinica` added to the no-horizontal-overflow routes (also the 360px test), the fixed-controls-cover test and the 44px tap-target list in `e2e/layout.spec.ts`. README updated (features, project tree, lazy routes).
+- Checks: typecheck, lint clean; `npx vitest run` 24 files / 214 tests pass; build OK; `check:bundle` 67.5 KB gzip (ClinicInfoPage chunk 0.8 KB); `npx playwright test` 66 passed, 27 skipped (remote-only deployment spec).

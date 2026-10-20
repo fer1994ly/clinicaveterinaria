@@ -31,6 +31,7 @@ Todo funciona en el navegador: no hay backend ni servicios externos (salvo la ca
 - **Historial** con filtros combinables por categoría y rango de fechas, y búsqueda por texto en la descripción.
 - **Reinicio mensual automático**: los totales se calculan por mes calendario de cada gasto; el historial nunca se borra y los presupuestos no cambian con el mes.
 - **Mes anterior** en modo solo lectura, para comparar con el mes en curso.
+- **Clínica** (`/clinica`): qué hace la clínica, dirección, teléfono (enlace para llamar), enlace a Google Maps y a Facebook. Solo enlaces externos, sin mapas incrustados (la CSP no cambia).
 - **Panel de administración** protegido por clave, único lugar donde se editan los presupuestos. Incluye "Restablecer datos de ejemplo".
 - **Persistencia** entre recargas y reaperturas de pestaña.
 - **Mobile-first**: sin elementos recortados ni botones ocultos en teléfonos.
@@ -143,6 +144,9 @@ src/
 │   ├── monthly-comparison/   # vista de solo lectura del mes anterior
 │   │   ├── application/      # compareMonths
 │   │   └── ui/               # PreviousMonthPage, ComparisonSection
+│   ├── clinic-info/          # datos de contacto de la clínica
+│   │   ├── domain/           # clinicInfo
+│   │   └── ui/               # ClinicInfoPage
 │   └── admin/                # clave, sesión y edición de presupuestos
 │       ├── domain/           # auth, ports
 │       ├── application/      # adminAccess
@@ -248,7 +252,7 @@ La aplicación está preparada para cambiar `localStorage` por una API:
 ## Rendimiento
 
 - **Presupuesto de tamaño:** el JavaScript de producción (carga inicial más chunks diferidos) no debe superar **150 KB gzip**. Hoy ronda los 66 KB.
-- **Rutas con carga diferida:** "Mes anterior" y "Admin" se cargan bajo demanda (`React.lazy`) para mantener liviana la primera carga.
+- **Rutas con carga diferida:** "Mes anterior", "Clínica" y "Admin" se cargan bajo demanda (`React.lazy`) para mantener liviana la primera carga.
 - **Verificación:** `npm run build && npm run check:bundle`; el script falla si se supera el límite.
 
 ## Despliegue en Netlify

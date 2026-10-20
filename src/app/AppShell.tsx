@@ -1,12 +1,13 @@
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { buttonClasses } from '../shared/ui/Button'
 import { StorageErrorBanner } from './StorageErrorBanner'
-import { CalendarIcon, HomeIcon, ListIcon, LockIcon, PawIcon, PlusIcon } from '../shared/ui/icons'
+import { CalendarIcon, HomeIcon, ListIcon, LockIcon, MapPinIcon, PawIcon, PlusIcon } from '../shared/ui/icons'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Inicio', icon: HomeIcon, end: true },
   { to: '/gastos', label: 'Gastos', icon: ListIcon, end: true },
   { to: '/mes-anterior', label: 'Mes anterior', icon: CalendarIcon, end: true },
+  { to: '/clinica', label: 'Clínica', icon: MapPinIcon, end: true },
   { to: '/admin', label: 'Admin', icon: LockIcon, end: true },
 ]
 
