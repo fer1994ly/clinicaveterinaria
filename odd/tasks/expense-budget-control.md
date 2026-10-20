@@ -44,7 +44,7 @@ The clinic tracks expenses from memory and finds out about overspending (e.g. a 
 - [x] T8 Native review per work-unit commit (T1..T7), each in its own worktree; user chose option A on 2026-10-20. Route: native review.
 - [x] T9 Rename branch to main, add remote origin https://github.com/fer1994ly/clinicaveterinaria.git, push (user-authorized 2026-10-20).
 - [x] T10 Fix review warnings: parseAmount decimals, BudgetEditor stale after reset, storage write failure handling, no silent record drop, per-category budget corruption fallback, Cancel fallback on direct entry, month rollover re-render, E2E count race + perf flakiness. Route: delegated (multi-file).
-- [ ] T11 Remote E2E against https://clinicaveterinariagastos.netlify.app (desktop + mobile): Playwright base URL override, CSP/headers/fonts check, load-time check; push to origin main (user-requested 2026-10-20) so Netlify redeploys. Route: delegated config + parent run.
+- [x] T11 Remote E2E against https://clinicaveterinariagastos.netlify.app (desktop + mobile): Playwright base URL override, CSP/headers/fonts check, load-time check; push to origin main (user-requested 2026-10-20) so Netlify redeploys. Route: delegated config + parent run.
 
 ## Acceptance criteria
 - Adding an expense updates its category total without reload.
@@ -121,3 +121,8 @@ Each claim was verified in code before fixing. RED was observed before every fix
 - `e2e/deployment.spec.ts` (remote only, 9 tests x 3 projects): CSP / X-Frame-Options DENY / nosniff, immutable `/assets/*`, HTML revalidation, deep links + reload (`/gastos`, `/gastos/nuevo`, `/mes-anterior`, `/admin`), no console errors or CSP violations, Nunito and Inter loaded, load < 3 s.
 - Remote run against the CURRENT deploy (old code): 87 passed (60 acceptance/layout + 27 deployment), repeated 3 times, all green. First attempt had 9 failures, all test-side or Netlify-side, none in our code: (a) `/` is served with `Cache-Control: public,max-age=0,must-revalidate` (equivalent to no-cache; assertion widened); (b) `document.fonts.check('1em Nunito')` is false because only weights 700/800 are declared (checks now use `800 1em Nunito` / `400 1em Inter`); (c) Netlify injects its own HUD badge (`/.netlify/scripts/hud`) that builds an inline srcdoc iframe which our correct CSP blocks, producing a console error. The console test stubs that Netlify script. This is a Netlify-injected artefact, not a defect in our CSP; it can be removed in the Netlify site settings (snippet injection / badge).
 - One acceptance perf failure was seen once under 16 parallel remote workers and did not recur (hence the 4-worker cap).
+
+### T11 (delivery)
+- T10/T11 commits ebb0fcd, f4d2ad3, 534e980, 406e51e, 04367a9, 224e3cb reviewed one by one in detached worktrees (user granted all 6): all approved and acknowledged.
+- Pushed to origin/main; Netlify served the new bundle (index-DEbjM4qN.js) ~20 s later.
+- `npm run test:e2e:remote` against https://clinicaveterinariagastos.netlify.app: 87 passed, 2 consecutive runs (desktop-chromium, mobile-android Pixel 7, mobile-ios iPhone 14 WebKit; acceptance + layout + deployment specs).
