@@ -41,7 +41,7 @@ The clinic tracks expenses from memory and finds out about overspending (e.g. a 
 - [x] T5 Admin slice: password gate (session-scoped), budget editing. Unit + integration tests. Route: delegated.
 - [x] T6 E2E (web + mobile): acceptance criteria scenarios, persistence after reload, no horizontal overflow on mobile. README with run instructions. Route: delegated.
 - [x] T7 Delivery prep: no console.* anywhere in source/scripts (ESLint no-console enforced), comprehensive README, Netlify deployment config (netlify.toml, SPA fallback, cache headers, Node version). Route: delegated (README + config + script = 2+ files).
-- [ ] T8 Native review per work-unit commit (T1..T7), each in its own worktree; user chose option A on 2026-10-20. Route: native review.
+- [x] T8 Native review per work-unit commit (T1..T7), each in its own worktree; user chose option A on 2026-10-20. Route: native review.
 - [ ] T9 Rename branch to main, add remote origin https://github.com/fer1994ly/clinicaveterinaria.git, push (user-authorized 2026-10-20).
 
 ## Acceptance criteria
@@ -61,7 +61,7 @@ The clinic tracks expenses from memory and finds out about overspending (e.g. a 
 - (commits and check results recorded per task below)
 
 ## Next step
-T8 reviews, then T9 push.
+T9 push; then optional follow-ups from review warnings (user decision).
 
 ### T1 (commit 918958e)
 - RED: 5 test files failed with `Failed to resolve import "./money" / "./yearMonth" / "./clock" / "./formatters" / storage adapters` (modules did not exist yet).
@@ -92,3 +92,8 @@ T8 reviews, then T9 push.
 - RED: added `no-console: error` to `eslint.config.js`; `npm run lint` failed with 4 errors (`Unexpected console statement`) in `scripts/check-bundle.mjs` lines 13, 21, 24, 26. GREEN: replaced with `process.stdout.write` / `process.stderr.write` (exit codes unchanged); lint clean.
 - Added `netlify.toml` (build, Node 22, SPA redirect, cache and security headers incl. CSP checked against index.html: one module script, Google Fonts only), `.nvmrc` (22), `engines.node >=20`, full Spanish README.
 - Checks: lint, typecheck, 168 Vitest tests (21 files), build, `check:bundle` 65.7 KB gzip, `test:e2e` 60 passed; `git grep "console\."` empty. Commit hash is reported by the delivery log (`git log --grep "Netlify"`).
+
+### T8
+- Whole-branch review refused (lens_context_budget_exceeded, 9906 lines); user chose per-commit review. Each commit reviewed in its own detached worktree, base = previous commit (T1 base = empty tree). User granted consent for all 7.
+- Outcomes: T1 918958e, T2 0e3a1b0, T3 a9b105c, T4 625cd75, T6 cc99ecf, T7 d8a232e approved (1 lens each); T5 41f4ef0 high risk, approved (4 lenses). All acknowledged, authority burned. No blocking findings.
+- Informational follow-ups (not fixed, pending user decision): parseAmount accepts "1500.50" as 150050 (money.ts); BudgetEditor rows stale after demo reset; storage write failures unhandled and invalid records silently dropped on next write; whole budget map falls back to defaults if one value is corrupt; form Cancel uses navigate(-1) on direct entry; month rollover not re-rendered while the page stays open; admin gate is client-side only (by design for demo); E2E delete count race and wall-clock perf flakiness; CSP not tested outside Netlify.
