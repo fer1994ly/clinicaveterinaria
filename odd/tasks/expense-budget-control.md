@@ -37,7 +37,7 @@ The clinic tracks expenses from memory and finds out about overspending (e.g. a 
 - [x] T1 Scaffold: Vite + React + TS + Tailwind + Vitest + Playwright configs, brand tokens, fonts, shared kernel (money, month/clock, storage port + localStorage adapter). Route: delegated.
 - [x] T2 Budgets slice domain/application: Category, budget status (ok/warning/exceeded), category summaries per month, monthly total. Unit tests. Route: delegated.
 - [x] T3 Expenses slice domain/application/infrastructure: Expense validation, add/edit/delete, history query (category + date range + search), localStorage repository, seed data. Unit + integration tests. Route: delegated.
-- [ ] T4 UI: dashboard (total + category cards + progress bars + alerts), expense form (create/edit), history with filters/search, delete confirmation, previous-month read-only view, mobile navigation. Integration tests (RTL). Route: delegated.
+- [x] T4 UI: dashboard (total + category cards + progress bars + alerts), expense form (create/edit), history with filters/search, delete confirmation, previous-month read-only view, mobile navigation. Integration tests (RTL). Route: delegated.
 - [ ] T5 Admin slice: password gate (session-scoped), budget editing. Unit + integration tests. Route: delegated.
 - [ ] T6 E2E (web + mobile): acceptance criteria scenarios, persistence after reload, no horizontal overflow on mobile. README with run instructions. Route: delegated.
 
@@ -58,7 +58,7 @@ The clinic tracks expenses from memory and finds out about overspending (e.g. a 
 - (commits and check results recorded per task below)
 
 ## Next step
-T4.
+T5.
 
 ### T1 (commit 918958e)
 - RED: 5 test files failed with `Failed to resolve import "./money" / "./yearMonth" / "./clock" / "./formatters" / storage adapters` (modules did not exist yet).
@@ -71,3 +71,8 @@ T4.
 ### T3
 - RED: 5 test files failed (`Failed to resolve import` for validateExpense, queryHistory, add/edit/deleteExpense, localExpenseRepository, seed).
 - GREEN: 111 tests pass (14 files); typecheck + lint clean. Seed verified for clocks on days 1, 3, 20, 31 and Feb/Mar.
+
+### T4
+- RED: 4 new files failed to import (`app/AppProviders`, `compareMonths`, ...) and `LocalBudgetRepository > returns a stable snapshot until the budgets change` failed on the assertion (getAll returned a new object each call).
+- GREEN: 140 tests pass (18 files); typecheck, lint, build clean; `check:bundle` 64.0 KB gzip.
+- Note: nav has Inicio / Gastos / Mes anterior; the Admin tab is added in T5.

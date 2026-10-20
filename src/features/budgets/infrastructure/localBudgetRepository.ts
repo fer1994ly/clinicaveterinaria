@@ -1,5 +1,4 @@
 import type { KeyValueStorage } from '../../../shared/domain/storage'
-import { readJson, writeJson } from '../../../shared/infrastructure/jsonStorage'
 import { CATEGORIES, DEFAULT_BUDGETS, type Budgets, type CategoryId } from '../domain/category'
 import type { BudgetRepository } from '../domain/ports'
 
@@ -13,17 +12,33 @@ const isBudgets = (v: unknown): v is Budgets =>
     return typeof n === 'number' && Number.isInteger(n) && n > 0
   })
 
+function parse(raw: string | null): Budgets {
+  if (raw === null) return { ...DEFAULT_BUDGETS }
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    return isBudgets(parsed) ? parsed : { ...DEFAULT_BUDGETS }
+  } catch {
+    return { ...DEFAULT_BUDGETS }
+  }
+}
+
+/** Budgets persisted under a versioned key; falls back to defaults when missing or corrupt. */
 export class LocalBudgetRepository implements BudgetRepository {
   private readonly listeners = new Set<() => void>()
+  private cache: { raw: string | null; value: Budgets } | null = null
 
   constructor(private readonly storage: KeyValueStorage) {}
 
+  /** Stable snapshot: same object until the stored value changes. */
   getAll(): Budgets {
-    return readJson(this.storage, BUDGETS_KEY, isBudgets) ?? { ...DEFAULT_BUDGETS }
+    const raw = this.storage.getItem(BUDGETS_KEY)
+    if (this.cache && this.cache.raw === raw) return this.cache.value
+    this.cache = { raw, value: parse(raw) }
+    return this.cache.value
   }
 
   set(categoryId: CategoryId, amount: number): void {
-    writeJson(this.storage, BUDGETS_KEY, { ...this.getAll(), [categoryId]: amount })
+    this.storage.setItem(BUDGETS_KEY, JSON.stringify({ ...this.getAll(), [categoryId]: amount }))
     this.emit()
   }
 

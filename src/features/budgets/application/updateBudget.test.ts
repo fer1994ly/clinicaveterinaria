@@ -47,6 +47,15 @@ describe('LocalBudgetRepository', () => {
     expect(calls).toBe(1)
   })
 
+  it('returns a stable snapshot until the budgets change', () => {
+    const repo = new LocalBudgetRepository(new MemoryStorage())
+    expect(repo.getAll()).toBe(repo.getAll())
+    const before = repo.getAll()
+    repo.set('personal', 1234)
+    expect(repo.getAll()).not.toBe(before)
+    expect(repo.getAll()).toBe(repo.getAll())
+  })
+
   it('resets to defaults', () => {
     const repo = new LocalBudgetRepository(new MemoryStorage())
     repo.set('personal', 1)
