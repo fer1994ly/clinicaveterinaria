@@ -1,9 +1,11 @@
-import type { KeyValueStorage } from '../../../shared/domain/storage'
+import type { KeyValueStorage, WriteObserver } from '../../../shared/domain/storage'
 import { isCategoryId } from '../../budgets/domain/category'
 import type { Expense } from '../domain/expense'
 import type { ExpenseRepository } from '../domain/ports'
 
 export const EXPENSES_KEY = 'sienra.v1.expenses'
+/** Records (or whole raw values) that could not be read are parked here instead of being destroyed. */
+export const EXPENSES_QUARANTINE_KEY = 'sienra.v1.expenses.quarantine'
 
 const isExpense = (v: unknown): v is Expense => {
   if (typeof v !== 'object' || v === null) return false
@@ -20,22 +22,49 @@ const isExpense = (v: unknown): v is Expense => {
   )
 }
 
-/** Expenses persisted as one JSON array under a versioned key. Swap this class to move to a backend. */
+interface Parsed {
+  items: Expense[] | null
+  /** unreadable records, or the raw string when the whole value was corrupt */
+  rejected: unknown[]
+}
+
+function parse(raw: string | null): Parsed {
+  if (raw === null) return { items: null, rejected: [] }
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return { items: null, rejected: [raw] }
+    return { items: parsed.filter(isExpense), rejected: parsed.filter((x) => !isExpense(x)) }
+  } catch {
+    return { items: null, rejected: [raw] }
+  }
+}
+
+/**
+ * Expenses persisted as one JSON array under a versioned key. Swap this class to move to a backend.
+ * Writes never throw: if the storage refuses one, the data stays in memory (and is saved with the
+ * next successful write) and the observer is told so the UI can warn the user.
+ */
 export class LocalExpenseRepository implements ExpenseRepository {
   private readonly listeners = new Set<() => void>()
   private cache: { raw: string | null; items: readonly Expense[] } = { raw: null, items: [] }
+  /** latest data when the storage refused the write; wins over the stored value */
+  private unsaved: readonly Expense[] | null = null
 
-  constructor(private readonly storage: KeyValueStorage) {}
+  constructor(
+    private readonly storage: KeyValueStorage,
+    private readonly observer?: WriteObserver,
+  ) {}
 
   all(): readonly Expense[] {
+    if (this.unsaved) return this.unsaved
     const raw = this.storage.getItem(EXPENSES_KEY)
     if (raw === this.cache.raw) return this.cache.items
-    this.cache = { raw, items: this.parse(raw) ?? [] }
+    this.cache = { raw, items: parse(raw).items ?? [] }
     return this.cache.items
   }
 
   hasData(): boolean {
-    return this.parse(this.storage.getItem(EXPENSES_KEY)) !== null
+    return this.unsaved !== null || parse(this.storage.getItem(EXPENSES_KEY)).items !== null
   }
 
   add(expense: Expense): void {
@@ -62,18 +91,37 @@ export class LocalExpenseRepository implements ExpenseRepository {
   }
 
   private write(items: readonly Expense[]): void {
-    this.storage.setItem(EXPENSES_KEY, JSON.stringify(items))
+    try {
+      this.quarantineUnreadable()
+      this.storage.setItem(EXPENSES_KEY, JSON.stringify(items))
+      this.unsaved = null
+      this.observer?.writeSucceeded()
+    } catch {
+      this.unsaved = items
+      this.observer?.writeFailed()
+    }
     this.listeners.forEach((l) => l())
   }
 
-  /** null when missing/corrupt; otherwise only the well-formed records. */
-  private parse(raw: string | null): Expense[] | null {
-    if (raw === null) return null
+  /** Copies whatever is unreadable in the stored value into the quarantine key before it gets overwritten. */
+  private quarantineUnreadable(): void {
+    const { rejected } = parse(this.storage.getItem(EXPENSES_KEY))
+    if (rejected.length === 0) return
+    const existing = this.readQuarantine()
+    const seen = new Set(existing.map((x) => JSON.stringify(x)))
+    const added = rejected.filter((x) => !seen.has(JSON.stringify(x)))
+    if (added.length === 0) return
+    this.storage.setItem(EXPENSES_QUARANTINE_KEY, JSON.stringify([...existing, ...added]))
+  }
+
+  private readQuarantine(): unknown[] {
+    const raw = this.storage.getItem(EXPENSES_QUARANTINE_KEY)
+    if (raw === null) return []
     try {
       const parsed: unknown = JSON.parse(raw)
-      return Array.isArray(parsed) ? parsed.filter(isExpense) : null
+      return Array.isArray(parsed) ? parsed : [raw]
     } catch {
-      return null
+      return [raw]
     }
   }
 }

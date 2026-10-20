@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import { StorageWriteError } from '../domain/storage'
 import { LocalStorageAdapter } from './localStorageAdapter'
 import { MemoryStorage } from './memoryStorage'
 import { readJson, writeJson } from './jsonStorage'
@@ -37,16 +38,28 @@ describe('json helpers', () => {
   })
 })
 
-describe('LocalStorageAdapter resilience', () => {
-  it('does not throw when the browser storage throws', () => {
+describe('LocalStorageAdapter write failures', () => {
+  it('raises a typed StorageWriteError when the browser storage refuses a write', () => {
     const original = Storage.prototype.setItem
     Storage.prototype.setItem = () => {
       throw new Error('quota')
     }
     try {
-      expect(() => new LocalStorageAdapter().setItem('k', 'v')).not.toThrow()
+      expect(() => new LocalStorageAdapter().setItem('k', 'v')).toThrow(StorageWriteError)
     } finally {
       Storage.prototype.setItem = original
+    }
+  })
+
+  it('still reads and removes safely when the browser storage throws', () => {
+    const original = Storage.prototype.getItem
+    Storage.prototype.getItem = () => {
+      throw new Error('blocked')
+    }
+    try {
+      expect(new LocalStorageAdapter().getItem('k')).toBeNull()
+    } finally {
+      Storage.prototype.getItem = original
     }
   })
 })

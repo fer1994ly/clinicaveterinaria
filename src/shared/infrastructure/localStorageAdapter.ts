@@ -1,6 +1,6 @@
-import type { KeyValueStorage } from '../domain/storage'
+import { StorageWriteError, type KeyValueStorage } from '../domain/storage'
 
-/** Browser localStorage adapter that never throws (private mode, quota, disabled storage). */
+/** Browser localStorage adapter. Reads/removes never throw; a refused write (quota, private mode) raises StorageWriteError. */
 export class LocalStorageAdapter implements KeyValueStorage {
   getItem(key: string): string | null {
     try {
@@ -14,7 +14,7 @@ export class LocalStorageAdapter implements KeyValueStorage {
     try {
       window.localStorage.setItem(key, value)
     } catch {
-      /* storage unavailable: keep the app usable for the session */
+      throw new StorageWriteError(key)
     }
   }
 

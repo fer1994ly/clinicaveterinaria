@@ -1,6 +1,7 @@
 import type { Clock } from '../shared/domain/clock'
 import type { IdGenerator } from '../shared/domain/id'
 import type { KeyValueStorage } from '../shared/domain/storage'
+import { StorageStatus } from '../shared/infrastructure/storageStatus'
 import { uuid } from '../shared/infrastructure/uuid'
 import type { BudgetRepository } from '../features/budgets/domain/ports'
 import { LocalBudgetRepository } from '../features/budgets/infrastructure/localBudgetRepository'
@@ -17,6 +18,8 @@ export interface Container {
   expenses: ExpenseRepository
   budgets: BudgetRepository
   adminSession: AdminSession
+  /** whether the last save to the persistent storage failed (drives the warning banner) */
+  storageStatus: StorageStatus
 }
 
 export interface ContainerOptions {
@@ -30,8 +33,9 @@ export interface ContainerOptions {
 
 export function createContainer(options: ContainerOptions): Container {
   const newId = options.newId ?? uuid
-  const expenses = new LocalExpenseRepository(options.storage)
-  const budgets = new LocalBudgetRepository(options.storage)
+  const storageStatus = new StorageStatus()
+  const expenses = new LocalExpenseRepository(options.storage, storageStatus)
+  const budgets = new LocalBudgetRepository(options.storage, storageStatus)
   seedIfEmpty(expenses, options.clock, newId)
-  return { clock: options.clock, newId, expenses, budgets, adminSession: new StorageAdminSession(options.sessionStorage) }
+  return { clock: options.clock, newId, expenses, budgets, adminSession: new StorageAdminSession(options.sessionStorage), storageStatus }
 }

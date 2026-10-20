@@ -1,5 +1,6 @@
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { buttonClasses } from '../shared/ui/Button'
+import { StorageErrorBanner } from './StorageErrorBanner'
 import { CalendarIcon, HomeIcon, ListIcon, LockIcon, PawIcon, PlusIcon } from '../shared/ui/icons'
 
 const NAV_ITEMS = [
@@ -29,6 +30,8 @@ export function AppShell() {
           <p className="text-sm text-ink-soft">Control de gastos y presupuestos</p>
         </div>
       </header>
+
+      <StorageErrorBanner />
 
       <main className="px-4 pb-[calc(11rem+env(safe-area-inset-bottom))] pt-2">
         <Outlet />
