@@ -50,6 +50,13 @@ export const LockIcon = (p: IconProps) => (
   </Svg>
 )
 
+export const MapPinIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M12 21s6.500-5.800 6.500-11a6.500 6.500 0 0 0-13 0c0 5.200 6.500 11 6.500 11z" />
+    <circle cx="12" cy="10" r="2.300" />
+  </Svg>
+)
+
 export const PlusIcon = (p: IconProps) => (
   <Svg {...p}>
     <path d="M12 5v14M5 12h14" />

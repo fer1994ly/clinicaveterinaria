@@ -13,6 +13,10 @@ const PreviousMonthPage = lazy(() =>
 
 const AdminPage = lazy(() => import('../features/admin/ui/AdminPage').then((m) => ({ default: m.AdminPage })))
 
+const ClinicInfoPage = lazy(() =>
+  import('../features/clinic-info/ui/ClinicInfoPage').then((m) => ({ default: m.ClinicInfoPage })),
+)
+
 function Loading() {
   return <p className="p-4 text-ink-soft">Cargando…</p>
 }
@@ -42,6 +46,14 @@ export function AppRoutes() {
           element={
             <Suspense fallback={<Loading />}>
               <PreviousMonthPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="clinica"
+          element={
+            <Suspense fallback={<Loading />}>
+              <ClinicInfoPage />
             </Suspense>
           }
         />
