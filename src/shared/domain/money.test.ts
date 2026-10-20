@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isPositiveInteger, parseAmount, percentOf, sumAmounts } from './money'
+import { hasDecimalPart, isPositiveInteger, parseAmount, percentOf, sumAmounts } from './money'
 
 describe('money', () => {
   it('sums integer amounts', () => {
@@ -30,5 +30,28 @@ describe('money', () => {
     expect(parseAmount('')).toBeNull()
     expect(parseAmount('abc')).toBeNull()
     expect(parseAmount('12,5')).toBeNull()
+  })
+
+  it.each([
+    ['120.000', 120000],
+    ['1.234.567', 1234567],
+    ['$ 1.500', 1500],
+  ])('accepts valid thousand grouping %j', (raw, expected) => {
+    expect(parseAmount(raw)).toBe(expected)
+  })
+
+  it.each(['1500.50', '1500,50', '1.5', '1,5', '1.50', '1.500,50', '1500.500', '12.34.567', '.500', '1.5000', '1500,00'])(
+    'rejects decimals or invalid grouping %j',
+    (raw) => {
+      expect(parseAmount(raw)).toBeNull()
+    },
+  )
+
+  it('flags numeric text that cannot be a whole-peso amount as having a decimal part', () => {
+    expect(hasDecimalPart('1500.50')).toBe(true)
+    expect(hasDecimalPart('1,5')).toBe(true)
+    expect(hasDecimalPart('1.500')).toBe(false)
+    expect(hasDecimalPart('abc')).toBe(false)
+    expect(hasDecimalPart('')).toBe(false)
   })
 })

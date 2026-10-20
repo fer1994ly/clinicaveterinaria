@@ -33,10 +33,16 @@ describe('validateExpenseInput', () => {
     expect(r.ok).toBe(false)
   })
 
-  it.each(['', '   ', '0', '-5', 'abc', '12,5'])('rejects amount %j', (amount) => {
+  it.each(['', '   ', '0', '-5', 'abc'])('rejects amount %j', (amount) => {
     const r = validateExpenseInput({ ...valid, amount })
     expect(r).toMatchObject({ ok: false })
     if (!r.ok) expect(r.errors.amount).toBe('Ingrese un monto mayor a cero.')
+  })
+
+  it.each(['1500.50', '1500,50', '1.5', '1,5'])('rejects decimal amount %j with a specific message', (amount) => {
+    const r = validateExpenseInput({ ...valid, amount })
+    expect(r).toMatchObject({ ok: false })
+    if (!r.ok) expect(r.errors.amount).toBe('Ingrese un monto en pesos, sin decimales.')
   })
 
   it.each(['', '2026-13-01', '2026-02-30', 'hoy', '05/10/2026'])('rejects date %j', (date) => {

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { parseAmount } from '../../../shared/domain/money'
+import { DECIMALS_MESSAGE, hasDecimalPart, parseAmount } from '../../../shared/domain/money'
 import { Button } from '../../../shared/ui/Button'
 import { TextField } from '../../../shared/ui/fields'
 import { updateBudget } from '../../budgets/application/updateBudget'
@@ -8,14 +8,23 @@ import type { BudgetRepository } from '../../budgets/domain/ports'
 
 function BudgetRow({ category, current, repo }: { category: Category; current: number; repo: BudgetRepository }) {
   const [value, setValue] = useState(String(current))
+  const [syncedCurrent, setSyncedCurrent] = useState(current)
   const [error, setError] = useState<string | undefined>()
   const [saved, setSaved] = useState(false)
+
+  // The stored budget can change outside this row (e.g. demo data reset): show it.
+  if (current !== syncedCurrent) {
+    setSyncedCurrent(current)
+    setValue(String(current))
+    setError(undefined)
+  }
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
     const result = updateBudget(repo, category.id, parseAmount(value) ?? Number.NaN)
     setSaved(result.ok)
-    setError(result.ok ? undefined : result.errors.amount)
+    if (result.ok) return setError(undefined)
+    setError(hasDecimalPart(value) ? DECIMALS_MESSAGE : result.errors.amount)
   }
 
   return (

@@ -14,12 +14,26 @@ export function isPositiveInteger(value: number): boolean {
   return Number.isInteger(value) && value > 0
 }
 
+const strip = (raw: string) => raw.replace(/\$/g, '').replace(/\s/g, '')
+
 /**
  * Parses what a person types in an amount field: "1500", "1.500", "$ 12.345".
- * Dots are treated as thousand separators; decimals are not supported.
+ * es-UY uses "." as thousands separator and "," as decimal mark. Amounts are whole
+ * pesos, so a dot only counts as a separator in valid groups of exactly three
+ * digits ("1.500", "1.234.567"); anything with a decimal part ("1500.50", "1,5",
+ * "1.5") is rejected instead of being silently misread.
  */
 export function parseAmount(raw: string): number | null {
-  const cleaned = raw.replace(/\$/g, '').replace(/\s/g, '').replace(/\./g, '')
-  if (!/^\d+$/.test(cleaned)) return null
-  return Number(cleaned)
+  const cleaned = strip(raw)
+  if (/^\d+$/.test(cleaned)) return Number(cleaned)
+  if (/^\d{1,3}(\.\d{3})+$/.test(cleaned)) return Number(cleaned.replace(/\./g, ''))
+  return null
 }
+
+/** True for numeric-looking text that parseAmount rejects because of a decimal part or bad grouping. */
+export function hasDecimalPart(raw: string): boolean {
+  const cleaned = strip(raw)
+  return /^[\d.,]*\d[\d.,]*$/.test(cleaned) && parseAmount(raw) === null
+}
+
+export const DECIMALS_MESSAGE = 'Ingrese un monto en pesos, sin decimales.'

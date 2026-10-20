@@ -1,4 +1,4 @@
-import { isPositiveInteger, parseAmount } from '../../../shared/domain/money'
+import { DECIMALS_MESSAGE, hasDecimalPart, isPositiveInteger, parseAmount } from '../../../shared/domain/money'
 import { fail, ok, type Result } from '../../../shared/domain/result'
 import { isCategoryId } from '../../budgets/domain/category'
 import type { ExpenseDraft, ExpenseField, ExpenseFormInput } from './expense'
@@ -19,7 +19,8 @@ export function validateExpenseInput(input: ExpenseFormInput): Result<ExpenseDra
   const description = input.description.trim()
 
   if (!isCategoryId(input.categoryId)) errors.categoryId = 'Seleccione una categoría.'
-  if (amount === null || !isPositiveInteger(amount)) errors.amount = 'Ingrese un monto mayor a cero.'
+  if (amount === null && hasDecimalPart(input.amount)) errors.amount = DECIMALS_MESSAGE
+  else if (amount === null || !isPositiveInteger(amount)) errors.amount = 'Ingrese un monto mayor a cero.'
   if (!isRealIsoDate(input.date)) errors.date = 'Ingrese una fecha válida.'
   if (description.length > MAX_DESCRIPTION_LENGTH) {
     errors.description = `La descripción admite hasta ${MAX_DESCRIPTION_LENGTH} caracteres.`

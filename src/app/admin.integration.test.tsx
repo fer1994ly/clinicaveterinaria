@@ -81,7 +81,7 @@ describe('Budget editor', () => {
     expect(await screen.findByTestId('category-card-personal')).toHaveAttribute('data-status', 'exceeded')
   })
 
-  it.each(['0', '-5', 'abc', '12,5', ''])('rejects the budget %j', async (value) => {
+  it.each(['0', '-5', 'abc', ''])('rejects the budget %j', async (value) => {
     const { user, container } = renderApp({ route: '/admin' })
     await login(user)
     const field = await screen.findByLabelText('Presupuesto de Servicios (luz, agua, gas)')
@@ -90,6 +90,19 @@ describe('Budget editor', () => {
     await user.click(screen.getByRole('button', { name: 'Guardar presupuesto de Servicios (luz, agua, gas)' }))
     expect(await screen.findByText('Ingrese un número entero positivo.')).toBeInTheDocument()
     expect(container.budgets.getAll().servicios).toBe(35000)
+  })
+})
+
+describe('Budget editor amount validation', () => {
+  it.each(['1500.50', '12,5', '1.5'])('rejects decimals %j with a specific message and keeps the stored budget', async (value) => {
+    const { user, container } = renderApp({ route: '/admin' })
+    await login(user)
+    const field = await screen.findByLabelText('Presupuesto de Personal')
+    await user.clear(field)
+    await user.type(field, value)
+    await user.click(screen.getByRole('button', { name: 'Guardar presupuesto de Personal' }))
+    expect(await screen.findByText('Ingrese un monto en pesos, sin decimales.')).toBeInTheDocument()
+    expect(container.budgets.getAll().personal).toBe(150000)
   })
 })
 
@@ -107,13 +120,16 @@ describe('Reset demo data', () => {
 
   it('restores the demo expenses and budgets after confirming', async () => {
     const { user, container } = renderApp({ route: '/admin' })
-    await login(user)
-    container.expenses.replaceAll([])
     container.budgets.set('personal', 1000)
+    await login(user)
+    expect(await screen.findByLabelText('Presupuesto de Personal')).toHaveValue('1000')
+    container.expenses.replaceAll([])
     await user.click(await screen.findByRole('button', { name: 'Restablecer datos de ejemplo' }))
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Sí, restablecer' }))
     expect(container.expenses.all().length).toBeGreaterThan(20)
     expect(container.budgets.getAll().personal).toBe(150000)
     expect(await screen.findByText('Datos de ejemplo restablecidos.')).toBeInTheDocument()
+    expect(screen.getByLabelText('Presupuesto de Personal')).toHaveValue('150000')
+    expect(screen.getByLabelText('Presupuesto de Medicamentos y farmacia')).toHaveValue('120000')
   })
 })
