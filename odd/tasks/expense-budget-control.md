@@ -91,7 +91,7 @@ Optional follow-ups from review warnings (user decision).
 ### T7
 - RED: added `no-console: error` to `eslint.config.js`; `npm run lint` failed with 4 errors (`Unexpected console statement`) in `scripts/check-bundle.mjs` lines 13, 21, 24, 26. GREEN: replaced with `process.stdout.write` / `process.stderr.write` (exit codes unchanged); lint clean.
 - Added `netlify.toml` (build, Node 22, SPA redirect, cache and security headers incl. CSP checked against index.html: one module script, Google Fonts only), `.nvmrc` (22), `engines.node >=20`, full Spanish README.
-- Checks: lint, typecheck, 168 Vitest tests (21 files), build, `check:bundle` 65.7 KB gzip, `test:e2e` 60 passed; `git grep "console\."` empty. Commit hash is reported by the delivery log (`git log --grep "Netlify"`).
+- Checks: lint, typecheck, 168 Vitest tests (21 files), build, `check:bundle` 65.7 KB gzip, `test:e2e` 60 passed; `git grep "console."` shows only 2 prose mentions (README lint section, this doc), no code calls. Commit d8a232e.
 
 ### T8
 - Whole-branch review refused (lens_context_budget_exceeded, 9906 lines); user chose per-commit review. Each commit reviewed in its own detached worktree, base = previous commit (T1 base = empty tree). User granted consent for all 7.
