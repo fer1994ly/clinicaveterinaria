@@ -43,6 +43,8 @@ The clinic tracks expenses from memory and finds out about overspending (e.g. a 
 - [x] T7 Delivery prep: no console.* anywhere in source/scripts (ESLint no-console enforced), comprehensive README, Netlify deployment config (netlify.toml, SPA fallback, cache headers, Node version). Route: delegated (README + config + script = 2+ files).
 - [x] T8 Native review per work-unit commit (T1..T7), each in its own worktree; user chose option A on 2026-10-20. Route: native review.
 - [x] T9 Rename branch to main, add remote origin https://github.com/fer1994ly/clinicaveterinaria.git, push (user-authorized 2026-10-20).
+- [x] T10 Fix review warnings: parseAmount decimals, BudgetEditor stale after reset, storage write failure handling, no silent record drop, per-category budget corruption fallback, Cancel fallback on direct entry, month rollover re-render, E2E count race + perf flakiness. Route: delegated (multi-file).
+- [ ] T11 Remote E2E against https://clinicaveterinariagastos.netlify.app (desktop + mobile): Playwright base URL override, CSP/headers/fonts check, load-time check; push to origin main (user-requested 2026-10-20) so Netlify redeploys. Route: delegated config + parent run.
 
 ## Acceptance criteria
 - Adding an expense updates its category total without reload.
@@ -61,7 +63,7 @@ The clinic tracks expenses from memory and finds out about overspending (e.g. a 
 - (commits and check results recorded per task below)
 
 ## Next step
-Optional follow-ups from review warnings (user decision).
+T11: parent pushes `main` to origin so Netlify redeploys, waits for the deploy, then re-runs `npm run test:e2e:remote` (config and `e2e/deployment.spec.ts` are ready).
 
 ### T1 (commit 918958e)
 - RED: 5 test files failed with `Failed to resolve import "./money" / "./yearMonth" / "./clock" / "./formatters" / storage adapters` (modules did not exist yet).
@@ -100,3 +102,22 @@ Optional follow-ups from review warnings (user decision).
 
 ### T9
 - Branch renamed to `main`, remote `origin` = https://github.com/fer1994ly/clinicaveterinaria.git, `git push -u origin main` succeeded (new branch main).
+
+### T10 (commits ebb0fcd, f4d2ad3, 534e980, 406e51e, 04367a9)
+Each claim was verified in code before fixing. RED was observed before every fix (Vitest unless noted).
+1. parseAmount (ebb0fcd): RED 12 failures (`money.test.ts` 8: "1500.50", "1.5", "1.50", "1500.500", "12.34.567", ".500", "1.5000" were accepted, `hasDecimalPart` missing; `validateExpense.test.ts` 4: decimals gave the generic message). GREEN: dot is a thousands separator only in valid groups of three; decimals rejected with "Ingrese un monto en pesos, sin decimales." (expense form and budget editor). The amount input was already `type="text" inputMode="numeric"`, unchanged. The decimal UI test in `admin.integration.test.tsx` was added after the implementation (not RED; the domain RED covers it).
+2. BudgetEditor stale rows (ebb0fcd): RED 2 failures in `admin.integration.test.tsx` (inputs kept the pre-reset value, '1000' instead of '150000'). Fix: the row re-syncs its text when the stored budget changes (derived state during render, keeps the "saved" status). A dirty row whose stored value did not change is intentionally left alone.
+3. Storage write failure (f4d2ad3): RED 12 failures across `storage.test.ts`, repo tests, `storageError.integration.test.tsx` (`StorageWriteError` missing). `LocalStorageAdapter.setItem` now throws `StorageWriteError`; both repositories catch it, keep the data in memory (`unsaved`), notify subscribers and a `WriteObserver` (`StorageStatus` in the container) so `StorageErrorBanner` shows "No se pudo guardar. Verifique el espacio disponible del navegador." (non-blocking, dismissible, cleared by the next successful write). Unsaved data is persisted by the next successful write.
+4. Silent record drop (f4d2ad3): unreadable records (or the raw string when the JSON is corrupt) are copied to `sienra.v1.expenses.quarantine` before the main key is overwritten, deduplicated; if the quarantine write fails the main key is left untouched.
+5. Budget guard (f4d2ad3): per-category fallback; valid values are kept and only invalid ones default.
+6. Cancel (534e980): RED 2 failures (direct-entry new and edit forms did not leave the page). Fix: `location.key === 'default'` means direct entry, so Cancel navigates (replace) to `/` (new) or `/gastos` (edit); in-app history still uses `navigate(-1)`.
+7. Month rollover (406e51e): RED 3 failures in `monthRollover.integration.test.tsx` (heading stayed "Octubre de 2026" after the clock moved to Nov 1). `useToday` is now state fed by a timer to the next local midnight (+1 s) plus `visibilitychange` and `focus`; `useCurrentMonth` derives from it; timers and listeners are cleaned up (test asserts no pending timers after unmount). Verified Oct 31 -> Nov 1 with fake timers: heading "Noviembre de 2026", total "$ 0".
+8. E2E (04367a9): delete test now waits for `list.first()` to be visible before reading the baseline. The performance test no longer uses Node wall-clock: it runs without Playwright's faked clock and reads `navigation.domContentLoadedEventEnd` and `performance.now()` at the first visible content (< 3000 ms each). These two were E2E changes made without an observed RED (race/flake fixes cannot be forced red deterministically).
+- Repo note: `src/**` files are committed with CRLF in this repo (existing convention); new files follow it. `e2e/*.ts` (except `acceptance.spec.ts`), config files and scripts are LF.
+- Checks: `npm run lint` clean; `npm run typecheck` clean; `npm test -- --run` 23 files / 209 tests pass; `npm run build` OK; `npm run check:bundle` 66.6 KB gzip (limit 150); `npm run test:e2e` 60 passed, 27 skipped (deployment spec is remote-only).
+
+### T11 (config part, commit 224e3cb; not checked off until the parent pushes and re-runs against the new deploy)
+- `playwright.config.ts`: `E2E_BASE_URL` sets `baseURL` and disables `webServer`; remote runs use 4 workers so parallel load does not distort timing checks. `npm run test:e2e:remote` -> `scripts/e2e-remote.mjs` (no cross-env; spawns the Playwright CLI with `E2E_BASE_URL`, forwards the exit code, extra args allowed). Google Fonts are only aborted locally (`isRemote` in `e2e/fixtures.ts`).
+- `e2e/deployment.spec.ts` (remote only, 9 tests x 3 projects): CSP / X-Frame-Options DENY / nosniff, immutable `/assets/*`, HTML revalidation, deep links + reload (`/gastos`, `/gastos/nuevo`, `/mes-anterior`, `/admin`), no console errors or CSP violations, Nunito and Inter loaded, load < 3 s.
+- Remote run against the CURRENT deploy (old code): 87 passed (60 acceptance/layout + 27 deployment), repeated 3 times, all green. First attempt had 9 failures, all test-side or Netlify-side, none in our code: (a) `/` is served with `Cache-Control: public,max-age=0,must-revalidate` (equivalent to no-cache; assertion widened); (b) `document.fonts.check('1em Nunito')` is false because only weights 700/800 are declared (checks now use `800 1em Nunito` / `400 1em Inter`); (c) Netlify injects its own HUD badge (`/.netlify/scripts/hud`) that builds an inline srcdoc iframe which our correct CSP blocks, producing a console error. The console test stubs that Netlify script. This is a Netlify-injected artefact, not a defect in our CSP; it can be removed in the Netlify site settings (snippet injection / badge).
+- One acceptance perf failure was seen once under 16 parallel remote workers and did not recur (hence the 4-worker cap).
