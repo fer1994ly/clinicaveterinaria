@@ -1,4 +1,5 @@
-import { addExpense, expect, test } from './fixtures'
+import { test as plainTest } from '@playwright/test'
+import { addExpense, expect, isRemote, test } from './fixtures'
 
 test.describe('acceptance criteria', () => {
   test('dashboard shows the month total and one card per category', async ({ page }) => {
@@ -99,6 +100,8 @@ test.describe('everyday flows', () => {
   test('deleting asks for confirmation inside the app', async ({ page }) => {
     await page.goto('/gastos')
     const list = page.getByRole('list', { name: 'Lista de gastos' })
+    // wait for the list to render before reading the baseline (count() does not retry)
+    await expect(list.getByRole('listitem').first()).toBeVisible()
     const before = await list.getByRole('listitem').count()
     await page.getByRole('button', { name: 'Eliminar gasto: Medicación para animales internados' }).click()
     const dialog = page.getByRole('dialog', { name: '¿Eliminar este gasto?' })
@@ -136,15 +139,23 @@ test.describe('everyday flows', () => {
   })
 })
 
-test.describe('performance', () => {
-  test('the first screen is ready quickly', async ({ page }) => {
-    const start = Date.now()
+// No faked clock here: Playwright's clock hides the navigation entries and distorts timings.
+// Metrics come from the browser itself (performance.now() counts from navigation start).
+plainTest.describe('performance', () => {
+  plainTest('the first screen is ready quickly', async ({ page }) => {
+    if (!isRemote) await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.abort())
     await page.goto('/', { waitUntil: 'domcontentloaded' })
-    const domContentLoaded = Date.now() - start
     await expect(page.getByTestId('month-total')).toBeVisible()
-    const interactive = Date.now() - start
-    // generous local thresholds; the bundle size budget is enforced by `npm run check:bundle`
-    expect(domContentLoaded).toBeLessThan(3000)
-    expect(interactive).toBeLessThan(3000)
+    const metrics = await page.evaluate(() => {
+      const [navigation] = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[]
+      return {
+        domContentLoaded: navigation?.domContentLoadedEventEnd ?? Number.NaN,
+        contentVisible: performance.now(),
+      }
+    })
+    // generous thresholds; the bundle size budget is enforced by `npm run check:bundle`
+    expect(metrics.domContentLoaded).toBeGreaterThan(0)
+    expect(metrics.domContentLoaded).toBeLessThan(3000)
+    expect(metrics.contentVisible).toBeLessThan(3000)
   })
 })

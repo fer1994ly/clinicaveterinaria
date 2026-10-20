@@ -3,11 +3,15 @@ import { test as base, expect, type Page } from '@playwright/test'
 /** Every scenario runs on Tuesday 20 October 2026 so seed data and totals are deterministic. */
 export const NOW = new Date(2026, 9, 20, 12, 0, 0)
 
+/** True when the suite targets the deployed site (npm run test:e2e:remote). */
+export const isRemote = Boolean(process.env.E2E_BASE_URL)
+
 export const test = base.extend({
   context: async ({ context }, use) => {
     await context.clock.setFixedTime(NOW)
-    // Fonts come from Google Fonts; tests must not depend on the network.
-    await context.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.abort())
+    // Locally, fonts come from Google Fonts and tests must not depend on the network.
+    // Against the deployed site they are part of production, so they load for real.
+    if (!isRemote) await context.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.abort())
     await use(context)
   },
 })
