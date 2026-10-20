@@ -34,8 +34,8 @@ The clinic tracks expenses from memory and finds out about overspending (e.g. a 
 - Branch: `feat/expense-budget-control`. Work-unit commits per task, Conventional Commits, no AI attribution.
 
 ## Tasks
-- [ ] T1 Scaffold: Vite + React + TS + Tailwind + Vitest + Playwright configs, brand tokens, fonts, shared kernel (money, month/clock, storage port + localStorage adapter). Route: delegated.
-- [ ] T2 Budgets slice domain/application: Category, budget status (ok/warning/exceeded), category summaries per month, monthly total. Unit tests. Route: delegated.
+- [x] T1 Scaffold: Vite + React + TS + Tailwind + Vitest + Playwright configs, brand tokens, fonts, shared kernel (money, month/clock, storage port + localStorage adapter). Route: delegated.
+- [x] T2 Budgets slice domain/application: Category, budget status (ok/warning/exceeded), category summaries per month, monthly total. Unit tests. Route: delegated.
 - [ ] T3 Expenses slice domain/application/infrastructure: Expense validation, add/edit/delete, history query (category + date range + search), localStorage repository, seed data. Unit + integration tests. Route: delegated.
 - [ ] T4 UI: dashboard (total + category cards + progress bars + alerts), expense form (create/edit), history with filters/search, delete confirmation, previous-month read-only view, mobile navigation. Integration tests (RTL). Route: delegated.
 - [ ] T5 Admin slice: password gate (session-scoped), budget editing. Unit + integration tests. Route: delegated.
@@ -58,4 +58,12 @@ The clinic tracks expenses from memory and finds out about overspending (e.g. a 
 - (commits and check results recorded per task below)
 
 ## Next step
-T1.
+T3.
+
+### T1 (commit 918958e)
+- RED: 5 test files failed with `Failed to resolve import "./money" / "./yearMonth" / "./clock" / "./formatters" / storage adapters` (modules did not exist yet).
+- GREEN: 21 tests pass. Checks: typecheck, lint, build OK; `check:bundle` 45.1 KB gzip.
+
+### T2
+- RED: 4 test files failed (`Failed to resolve import` for budgetStatus, categorySummary, getMonthlyOverview, updateBudget/localBudgetRepository).
+- GREEN: 45 tests pass; typecheck + lint clean.
